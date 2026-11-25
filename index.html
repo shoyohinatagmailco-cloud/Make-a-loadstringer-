@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vortex X — Darknet Script Studio</title>
+<meta name="theme-color" content="#06070a">
+<style>
+:root{
+  --bg:#06070a;
+  --panel:#0d1016;
+  --panel-2:#121721;
+  --line:#1d2432;
+  --line-soft:#151a25;
+  --txt:#eef2f8;
+  --mut:#7d889c;
+  --mut-2:#535c6e;
+  --crimson:#ff2e55;
+  --crimson-dim:rgba(255,46,85,.14);
+  --crimson-glow:rgba(255,46,85,.35);
+  --cyan:#19e6c8;
+  --amber:#f5b731;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;min-height:100vh;overflow-x:hidden}
+
+.fx-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.fx-grid{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.022) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse at 50% 0%,#000 18%,transparent 78%)}
+.fx-glow{position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:640px;height:300px;background:radial-gradient(circle,rgba(255,46,85,.13) 0%,rgba(25,230,200,.04) 45%,transparent 75%);filter:blur(24px)}
+.fx-scan{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 2px,rgba(0,0,0,.16) 3px,rgba(0,0,0,.16) 4px);opacity:0;transition:opacity .25s}
+body.fx-on .fx-scan{opacity:.45}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:14px 14px 48px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 18px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{width:38px;height:38px;flex:none;display:grid;place-items:center;filter:drop-shadow(0 0 10px rgba(255,46,85,.28))}
+.brand-title{font-size:18px;font-weight:800;letter-spacing:.3px;line-height:1.15;white-space:nowrap}
+.brand-title i{font-style:normal;color:var(--crimson)}
+
+.top-actions{display:flex;align-items:center;gap:7px;flex:none}
+.pill-btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);color:var(--txt);font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s,transform .12s;white-space:nowrap}
+.pill-btn:hover{border-color:#2b3549;background:var(--panel-2)}
+.pill-btn:active{transform:scale(.97)}
+.pill-btn.active{border-color:rgba(255,46,85,.5);background:var(--crimson-dim);color:#ff93a7}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--crimson);box-shadow:0 0 8px var(--crimson)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 16px;box-shadow:0 16px 40px -24px rgba(0,0,0,.85)}
+.card + .card{margin-top:14px}
+
+.eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin:0 0 14px;display:flex;align-items:center;justify-content:space-between}
+.eyebrow-tag{font-size:10px;letter-spacing:.04em;text-transform:none;color:var(--crimson);background:var(--crimson-dim);border:1px solid rgba(255,46,85,.25);padding:2px 7px;border-radius:999px;font-weight:700}
+
+.field{margin-bottom:14px}
+.field:last-of-type{margin-bottom:0}
+.field-label{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:600;color:#d6deea;margin-bottom:7px}
+.field-label .opt{font-size:11px;font-weight:500;color:var(--mut-2)}
+
+.input,.textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--txt);font-size:13px;transition:border-color .15s,box-shadow .15s}
+.input{padding:11px 13px;font-family:inherit}
+.textarea{padding:12px 13px;min-height:142px;resize:vertical;line-height:1.52;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px}
+.input::placeholder,.textarea::placeholder{color:var(--mut-2)}
+.input:focus,.textarea:focus{outline:none;border-color:rgba(255,46,85,.55);box-shadow:0 0 0 3px rgba(255,46,85,.12)}
+
+.btn-row{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-top:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:transform .12s,background .15s,border-color .15s,box-shadow .15s;white-space:nowrap}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--crimson);color:#fff;box-shadow:0 8px 24px -8px var(--crimson-glow)}
+.btn-primary:hover{background:#ff4266}
+.btn-ghost{background:var(--panel-2);color:var(--txt);border-color:var(--line)}
+.btn-ghost:hover{border-color:#2d384d;background:#171e2b}
+
+.list-head{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 12px}
+.list-title{font-size:14.5px;font-weight:700;color:#dce4f0;margin:0}
+.list-count{font-size:11.5px;color:var(--mut);font-weight:600}
+
+.scripts-stack{display:flex;flex-direction:column;gap:12px}
+.script-card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px;transition:border-color .15s}
+.script-card:hover{border-color:#273145}
+.script-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.script-meta-left{display:flex;align-items:flex-start;gap:9px;min-width:0}
+.star-btn{background:none;border:0;padding:2px 0 0;cursor:pointer;color:var(--mut-2);font-size:14px;line-height:1;transition:color .15s,transform .12s;flex:none}
+.star-btn.on{color:var(--amber)}
+.star-btn:hover{transform:scale(1.12)}
+.script-name{font-size:14px;font-weight:700;color:var(--txt);margin:0 0 3px;word-break:break-word}
+.script-time{font-size:11px;color:var(--mut-2)}
+
+.script-right{display:flex;align-items:center;gap:8px;flex:none}
+.raw-link{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--mut);text-decoration:none;background:none;border:0;padding:2px 4px;cursor:pointer;transition:color .15s}
+.raw-link:hover{color:var(--cyan)}
+.del-btn{background:none;border:0;color:var(--mut-2);cursor:pointer;padding:4px;border-radius:7px;display:grid;place-items:center;transition:color .15s,background .15s}
+.del-btn:hover{color:#ff6b86;background:rgba(255,46,85,.1)}
+
+.code-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;cursor:pointer;transition:border-color .15s}
+.code-bar:hover{border-color:#283246}
+.code-snippet{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;color:#b8c4d6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
+.copy-btn{flex:none;display:inline-flex;align-items:center;gap:5px;background:none;border:0;color:var(--mut);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;transition:color .15s}
+.copy-btn:hover,.copy-btn.copied{color:var(--cyan)}
+
+.empty-box{background:var(--panel);border:1px dashed var(--line);border-radius:15px;padding:28px 18px;text-align:center;color:var(--mut);font-size:12.5px;line-height:1.6}
+
+.modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(3,4,7,.78);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 24px 60px rgba(0,0,0,.85)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.modal-title{font-size:13.5px;font-weight:700;margin:0}
+.modal-close{background:var(--panel-2);border:1px solid var(--line);color:var(--txt);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px}
+.modal-pre{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:12px;max-height:260px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;line-height:1.5;color:#d6e0ee;white-space:pre-wrap;word-break:break-word;margin:0 0 12px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);background:var(--panel-2);border:1px solid rgba(255,46,85,.45);color:var(--txt);font-size:12px;font-weight:600;padding:9px 15px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:70;box-shadow:0 12px 30px rgba(0,0,0,.65);white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="fx-layer" aria-hidden="true">
+  <div class="fx-grid"></div>
+  <div class="fx-glow"></div>
+  <div class="fx-scan"></div>
+</div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="20,2 35,10.5 35,29.5 20,38 5,29.5 5,10.5" fill="#0d1118" stroke="#ff2e55" stroke-width="1.8"/>
+        <path d="M11.5 13L18.6 27L20 24.1L14.6 13H11.5Z" fill="#eef2f8"/>
+        <path d="M28.5 13L21.4 27L20 24.1L25.4 13H28.5Z" fill="#eef2f8"/>
+        <polygon points="20,14.5 24,20 20,25.5 16,20" fill="#ff2e55"/>
+      </svg>
+      <div class="brand-title">Vortex <i>X</i></div>
+    </div>
+
+    <div class="top-actions">
+      <button class="pill-btn" id="fxToggle" type="button" title="Toggle darknet visual overlay">
+        <span class="dot-live"></span>
+        <span>Darknet FX</span>
+      </button>
+      <button class="pill-btn" id="resetBtn" type="button" title="Reset form fields">
+        <span>↺</span>
+        <span>Reset</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="eyebrow">
+        <span>Make a loadstring</span>
+        <span class="eyebrow-tag">VORTEX X</span>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="scriptName">
+          <span>Script name</span>
+          <span class="opt">(optional)</span>
+        </label>
+        <input class="input" id="scriptName" type="text" placeholder="e.g. Auto Farm" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="luaSource">
+          <span>Lua source</span>
+        </label>
+        <textarea class="textarea" id="luaSource" placeholder="-- Paste or write your Lua script here..."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="createBtn" type="button">
+          <span>Create loadstring</span>
+        </button>
+
+        <label class="btn btn-ghost" for="fileInput">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span>Upload file</span>
+        </label>
+        <input id="fileInput" type="file" accept=".lua,.txt,text/plain" hidden>
+      </div>
+    </section>
+
+    <div class="list-head">
+      <h2 class="list-title">Your scripts</h2>
+      <span class="list-count" id="scriptCount">0 saved</span>
+    </div>
+
+    <div class="scripts-stack" id="scriptsList"></div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="rawModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="modal-title" id="modalTitle">Raw Lua Source</h3>
+      <button class="modal-close" id="closeModal" type="button" aria-label="Close">✕</button>
+    </div>
+    <pre class="modal-pre" id="modalCode"></pre>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="downloadRawBtn" type="button">Download .lua</button>
+      <button class="btn btn-primary" id="copyRawBtn" type="button">Copy Lua</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "vortex_x_darknet_scripts_v1";
+const FX_KEY = "vortex_x_darknet_fx_v1";
+
+const $ = id => document.getElementById(id);
+
+let scripts = loadScripts();
+let activeModalId = null;
+
+function loadScripts(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch{
+    return [];
+  }
+}
+
+function saveScripts(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(scripts));
+  }catch{}
+}
+
+function showToast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+function makeId(){
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "vx_";
+  for(let i = 0; i < 12; i++){
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
+function formatNow(){
+  const d = new Date();
+  const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const timeStr = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  return `${dateStr}, ${timeStr}`;
+}
+
+function encodeLuaToBase64(luaText){
+  const bytes = new TextEncoder().encode(luaText);
+  let bin = "";
+  for(let i = 0; i < bytes.length; i++){
+    bin += String.fromCharCode(bytes[i]);
+  }
+  return btoa(bin);
+}
+
+function buildLoadstring(id, b64){
+  return `loadstring((function() local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' local s='${b64}':gsub('[^'..b..'=]','') return (s:gsub('.',function(x) if x=='=' then return '' end local r,f='',(b:find(x)-1) for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end return r end):gsub('%d%d%d?%d?%d?%d?%d?%d?',function(x) if #x~=8 then return '' end local c=0 for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end return string.char(c) end)) end)()) -- ${id}`;
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function copyText(text, successMsg = "Copied loadstring"){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch{
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+  showToast(successMsg);
+}
+
+function render(){
+  const list = $("scriptsList");
+  const count = $("scriptCount");
+  count.textContent = `${scripts.length} saved`;
+
+  if(!scripts.length){
+    list.innerHTML = `<div class="empty-box">No loadstrings yet.<br>Paste or upload a Lua script above and tap <strong>Create loadstring</strong>.</div>`;
+    return;
+  }
+
+  const sorted = [...scripts].sort((a, b) => {
+    if(a.starred !== b.starred) return a.starred ? -1 : 1;
+    return b.createdAt - a.createdAt;
+  });
+
+  list.innerHTML = sorted.map(item => {
+    const ls = buildLoadstring(item.id, item.b64);
+    return `
+      <article class="script-card" data-id="${escapeHtml(item.id)}">
+        <div class="script-top">
+          <div class="script-meta-left">
+            <button class="star-btn ${item.starred ? "on" : ""}" type="button" data-action="star" aria-label="Favorite script">
+              ${item.starred ? "★" : "☆"}
+            </button>
+            <div>
+              <h3 class="script-name">${escapeHtml(item.name)}</h3>
+              <div class="script-time">${escapeHtml(item.timeLabel)}</div>
+            </div>
+          </div>
+
+          <div class="script-right">
+            <button class="raw-link" type="button" data-action="raw">Raw link ↗</button>
+            <button class="del-btn" type="button" data-action="delete" aria-label="Delete script">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/>
+                <path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="code-bar" data-action="copy-bar" title="Click to copy loadstring">
+          <span class="code-snippet">${escapeHtml(ls)}</span>
+          <button class="copy-btn" type="button" data-action="copy">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+$("createBtn").addEventListener("click", async () => {
+  const source = $("luaSource").value.trim();
+  if(!source){
+    showToast("Paste or upload Lua source first");
+    $("luaSource").focus();
+    return;
+  }
+
+  const rawName = $("scriptName").value.trim();
+  const id = makeId();
+  const entry = {
+    id,
+    name: rawName || `Untitled Script (${id.slice(3, 7)})`,
+    code: $("luaSource").value,
+    b64: encodeLuaToBase64($("luaSource").value),
+    starred: false,
+    createdAt: Date.now(),
+    timeLabel: formatNow()
+  };
+
+  scripts.unshift(entry);
+  saveScripts();
+  render();
+
+  await copyText(buildLoadstring(entry.id, entry.b64), "Loadstring created & copied");
+});
+
+$("fileInput").addEventListener("change", e => {
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    $("luaSource").value = String(reader.result || "");
+    if(!$("scriptName").value.trim()){
+      $("scriptName").value = file.name.replace(/\.(lua|txt)$/i, "");
+    }
+    showToast(`Loaded ${file.name}`);
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+$("resetBtn").addEventListener("click", () => {
+  $("scriptName").value = "";
+  $("luaSource").value = "";
+  showToast("Fields reset");
+});
+
+const savedFx = localStorage.getItem(FX_KEY) === "1";
+if(savedFx){
+  document.body.classList.add("fx-on");
+  $("fxToggle").classList.add("active");
+}
+
+$("fxToggle").addEventListener("click", () => {
+  const isOn = document.body.classList.toggle("fx-on");
+  $("fxToggle").classList.toggle("active", isOn);
+  try{ localStorage.setItem(FX_KEY, isOn ? "1" : "0"); }catch{}
+  showToast(isOn ? "Darknet FX enabled" : "Darknet FX off");
+});
+
+$("scriptsList").addEventListener("click", async e => {
+  const card = e.target.closest(".script-card");
+  if(!card) return;
+  const id = card.getAttribute("data-id");
+  const idx = scripts.findIndex(s => s.id === id);
+  if(idx === -1) return;
+
+  const actionEl = e.target.closest("[data-action]");
+  const action = actionEl ? actionEl.getAttribute("data-action") : "";
+
+  if(action === "star"){
+    scripts[idx].starred = !scripts[idx].starred;
+    saveScripts();
+    render();
+    return;
+  }
+
+  if(action === "delete"){
+    scripts.splice(idx, 1);
+    saveScripts();
+    render();
+    showToast("Script deleted");
+    return;
+  }
+
+  if(action === "raw"){
+    activeModalId = id;
+    $("modalTitle").textContent = `${scripts[idx].name} — Raw Lua`;
+    $("modalCode").textContent = scripts[idx].code;
+    $("rawModal").classList.add("open");
+    return;
+  }
+
+  if(action === "copy" || action === "copy-bar"){
+    const ls = buildLoadstring(scripts[idx].id, scripts[idx].b64);
+    await copyText(ls, "Copied loadstring");
+    const btn = card.querySelector(".copy-btn");
+    if(btn){
+      btn.classList.add("copied");
+      const label = btn.querySelector("span");
+      const prev = label.textContent;
+      label.textContent = "Copied";
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        label.textContent = prev;
+      }, 1400);
+    }
+  }
+});
+
+function closeModal(){
+  $("rawModal").classList.remove("open");
+  activeModalId = null;
+}
+
+$("closeModal").addEventListener("click", closeModal);
+$("rawModal").addEventListener("click", e => {
+  if(e.target === $("rawModal")) closeModal();
+});
+
+$("copyRawBtn").addEventListener("click", async () => {
+  const item = scripts.find(s => s.id === activeModalId);
+  if(!item) return;
+  await copyText(item.code, "Copied raw Lua");
+});
+
+$("downloadRawBtn").addEventListener("click", () => {
+  const item = scripts.find(s => s.id === activeModalId);
+  if(!item) return;
+  const safeName = (item.name || "vortex_script").replace(/[^a-z0-9_\-]+/gi, "_").toLowerCase();
+  const blob = new Blob([item.code], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${safeName}.lua`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${safeName}.lua`);
+});
+
+render();
+</script>
+</body>
+</html>
